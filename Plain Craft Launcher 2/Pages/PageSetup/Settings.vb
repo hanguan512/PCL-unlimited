@@ -315,8 +315,8 @@ Public Class Settings
         If Value IsNot Nothing Then Return Value
         '对部分设置强制赋值
         Static ForcedSettings As New Dictionary(Of String, Object) From {
-            {"UiHiddenPageLink", True},
-            {"UiHiddenSetupLink", True}
+            {"UiHiddenPageLink", False},
+            {"UiHiddenSetupLink", False}
         }
         Dim ForcedSetting As Object = Nothing
         If ForcedSettings.TryGetValue(Key, ForcedSetting) Then

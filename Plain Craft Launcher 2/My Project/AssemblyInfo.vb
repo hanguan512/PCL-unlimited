@@ -10,6 +10,8 @@ Imports System.Runtime.InteropServices
 
 <Assembly: AssemblyTitle("Plain Craft Launcher (PCL) - unlimited 第三方修改版")>
 <Assembly: AssemblyDescription("Plain Craft Launcher 的第三方修改版（非官方），Minecraft 启动器")>
+' 联机功能使用 EasyTier（LGPL-3.0），版权归 EasyTier contributors 所有。
+<Assembly: AssemblyMetadata("ThirdParty", "EasyTier (LGPL-3.0) - https://github.com/EasyTier/EasyTier")>
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Plain Craft Launcher (PCL) - unlimited 第三方修改版")>
 <Assembly: AssemblyCopyright("Copyright © 成都瓜皮龙科技有限公司")>

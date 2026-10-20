@@ -48,3 +48,19 @@
 如果对具体细节有疑问，或是希望修改这些规则，欢迎在 https://github.com/Meloong-Git/PCL/discussions/new?category=%E6%8F%90%E9%97%AE 发帖！
 
 多谢大家啦！
+
+————————————————————————————————————
+
+《第三方组件许可与版权声明》
+
+本软件包含或调用了以下第三方开源组件。各组件的版权归其作者所有，并适用其各自的许可证。
+
+1. EasyTier
+   版权：Copyright © 2024-present Easytier Programme within The Commons Conservancy
+   许可：GNU Lesser General Public License v3.0（LGPL-3.0）
+   项目主页：https://github.com/EasyTier/EasyTier
+   许可证全文：https://github.com/EasyTier/EasyTier/blob/main/LICENSE
+   用途：联机功能的虚拟局域网组网
+   说明：EasyTier 以独立进程方式调用，未修改其源代码。其许可证全文随本软件附于 licenses/LGPL-3.0.txt。
+
+其他第三方组件的版权与许可信息见本软件附带的 THIRD-PARTY-NOTICES.txt。

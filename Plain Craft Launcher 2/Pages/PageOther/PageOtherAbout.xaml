@@ -47,9 +47,12 @@
                     <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22">
                         本软件（PCL-unlimited）是<Run FontWeight="Bold">第三方基于 Plain Craft Launcher (PCL) 独立修改</Run>的产物，并非 PCL 官方发布，也与 PCL 官方团队无关。
                     </TextBlock>
-                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0">
-                        主要修改：移除 Minecraft 下载功能，调整版本标识与界面文案。若需原版 PCL，请前往官方项目页下载。
-                    </TextBlock>
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0" Text="主要修改：" />
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,2,0,0" Text="· 恢复 Minecraft 下载功能；" />
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,2,0,0" Text="· 恢复并完善联机功能：基于开源 EasyTier（LGPL-3.0）实现无账号虚拟局域网，支持邀请码加入、剪贴板邀请码识别、房间玩家列表与房主踢出玩家；" />
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,2,0,0" Text="· 联机内置国内公共节点，不再依赖 PCL 官方服务器配置；" />
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,2,0,0" Text="· 调整第三方修改版标识、版本号与标题栏显示。" />
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0" Text="若需原版 PCL，请前往官方项目页下载。" />
                     <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0">
                         原项目：https://github.com/Meloong-Git/PCL
                     </TextBlock>
@@ -81,7 +84,7 @@
                     <local:MyButton Text="打开百科" Grid.Row="1" Grid.Column="2" Height="35" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://www.mcmod.cn" />
                     <local:MyListItem Title="z0z0r4" Margin="-5,0,0,0" IsHitTestVisible="False" Grid.ColumnSpan="2" Info="提供了 MCIM 社区资源镜像源和帮助库图床！" Grid.Row="2" Grid.Column="1" />
                     <local:MyButton Text="MCIM 主页" Grid.Row="2" Grid.Column="2" Height="35" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/mcmod-info-mirror" />
-                    <local:MyListItem Title="EasyTier" Margin="-5,0,0,0" IsHitTestVisible="False" Grid.ColumnSpan="2" Info="提供了联机模块！" Grid.Row="3" Grid.Column="1" />
+                    <local:MyListItem Title="EasyTier" Margin="-5,0,0,0" IsHitTestVisible="False" Grid.ColumnSpan="2" Info="提供了联机模块（LGPL-3.0）！" Grid.Row="3" Grid.Column="1" />
                     <local:MyButton Text="GitHub 页面" Grid.Row="3" Grid.Column="2" Height="35" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/EasyTier/EasyTier" />
                     <local:MyListItem Title="重庆大学开源软件镜像站" Margin="-5,0,0,0" IsHitTestVisible="False" Grid.ColumnSpan="2" Info="提供了 PCL 启动器及 Minecraft 部分开源项目的镜像分发！" Grid.Row="4" Grid.Column="1" />
                     <local:MyButton Text="打开镜像站" Grid.Row="4" Grid.Column="2" Height="35" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://mirrors.cqu.edu.cn/" />
@@ -592,6 +595,8 @@
                         <RowDefinition Height="60" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="60" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="60" />
                     </Grid.RowDefinitions>
                     
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Java Launch Wrapper" TextWrapping="Wrap" FontWeight="Bold" />
@@ -648,13 +653,6 @@
                     <local:MyButton Grid.Row="15" Grid.Column="2" MinWidth="140" Text="查看来源网站" Padding="13,0" Margin="0,7,20,18" HorizontalAlignment="Left"
                                     local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://www.iconfont.cn/" />
 
-                    <!--<TextBlock Grid.Row="16" Grid.Column="0" Text="EasyTier" TextWrapping="Wrap" FontWeight="Bold" />
-                    <TextBlock Grid.Row="16" Grid.Column="2" Grid.ColumnSpan="2" Text="Copyright © 2024-present Easytier Programme within The Commons Conservancy&#xa;Licensed under the GNU Lesser General Public License." TextWrapping="Wrap" />
-                    <local:MyButton Grid.Row="17" Grid.Column="2" MinWidth="140" Text="查看来源网站" Padding="13,0" Margin="0,7,20,18" HorizontalAlignment="Left"
-                                    local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://easytier.cn/" />
-                    <local:MyButton Grid.Row="17" Grid.Column="3" MinWidth="140" Text="查看许可文档" Padding="13,0" Margin="0,7,20,18" HorizontalAlignment="Left"
-                                    local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/EasyTier/EasyTier/blob/main/LICENSE" />-->
-
                     <TextBlock Grid.Row="16" Grid.Column="0" Text="ThrottleDebounce" TextWrapping="Wrap" FontWeight="Bold" />
                     <TextBlock Grid.Row="16" Grid.Column="2" Grid.ColumnSpan="2" Text="Copyright © 2026 Ben Hutchison&#xa;Licensed under the Apache License, Version 2.0." TextWrapping="Wrap" />
                     <local:MyButton Grid.Row="17" Grid.Column="2" MinWidth="140" Text="查看来源网站" Padding="13,0" Margin="0,7,20,18" HorizontalAlignment="Left"
@@ -675,6 +673,13 @@
                                     local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/HMCL-dev/HMCL/tree/main/minecraft/libraries/HMCLTransformerDiscoveryService" />
                     <local:MyButton Grid.Row="21" Grid.Column="3" MinWidth="140" Text="查看许可文档" Padding="13,0" Margin="0,7,20,18" HorizontalAlignment="Left"
                                     local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/HMCL-dev/HMCL/blob/main/LICENSE" />
+
+                    <TextBlock Grid.Row="22" Grid.Column="0" Text="EasyTier" TextWrapping="Wrap" FontWeight="Bold" />
+                    <TextBlock Grid.Row="22" Grid.Column="2" Grid.ColumnSpan="2" Text="Copyright © 2024-present Easytier Programme within The Commons Conservancy&#xa;Licensed under the GNU Lesser General Public License v3.0." TextWrapping="Wrap" />
+                    <local:MyButton Grid.Row="23" Grid.Column="2" MinWidth="140" Text="查看来源网站" Padding="13,0" Margin="0,7,20,18" HorizontalAlignment="Left"
+                                    local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/EasyTier/EasyTier" />
+                    <local:MyButton Grid.Row="23" Grid.Column="3" MinWidth="140" Text="查看许可文档" Padding="13,0" Margin="0,7,20,18" HorizontalAlignment="Left"
+                                    local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/EasyTier/EasyTier/blob/main/LICENSE" />
                 </Grid>
             </local:MyCard>
         </StackPanel>

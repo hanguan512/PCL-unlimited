@@ -1,0 +1,19 @@
+PCL-unlimited 第三方组件许可与版权声明
+========================================
+
+本软件包含或调用了以下第三方开源组件。各组件的版权归其作者所有，并适用其各自的许可证。
+
+1. EasyTier
+   版权：Copyright © 2024-present Easytier Programme within The Commons Conservancy
+   许可：GNU Lesser General Public License v3.0（LGPL-3.0）
+   项目主页：https://github.com/EasyTier/EasyTier
+   许可证全文：https://github.com/EasyTier/EasyTier/blob/main/LICENSE
+   本地副本：licenses/LGPL-3.0.txt
+   用途：联机功能的虚拟局域网组网
+   说明：EasyTier 以独立进程方式调用，未修改其源代码。
+
+2. 其他第三方组件
+   本软件还包含或调用了若干第三方组件（如 Newtonsoft.Json、NAudio、Ookii.Dialogs.Wpf、CacheCow、libwebp-net、ThrottleDebounce 等），
+   其版权归各自作者所有，具体许可信息见各项目页面及软件“关于 → 许可与版权声明”页面。
+
+LGPL-3.0 许可证全文见 licenses/LGPL-3.0.txt。

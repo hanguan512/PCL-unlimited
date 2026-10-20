@@ -77,6 +77,7 @@ Public Class PageLinkMain
         SyncLock LinkLoader.LockState
             LinkLoader.State = LoadState.Waiting
         End SyncLock
+        ClearFirewallRules()
         ProcessStop()
         '页面切换
         If OldState <> LinkStates.Finished Then
@@ -423,21 +424,14 @@ Public Class PageLinkMain
         New LoaderTask(Of Integer, Integer)("启动联机模块", AddressOf InitLaunch) With {.ProgressWeight = 50}
     })
 
-    '1. 获取服务器配置
+    Private Shared LinkConfig As JObject
+
+    '1. 加载联机配置
     Private Sub InitConfig(Task As LoaderTask(Of Integer, Integer))
-        UpdateLoadingPage("正在联网获取配置……", "联网获取配置")
-        If VersionBranchMain <> "Official" Then
-            Throw New Exception($"$开源版无法联网获取配置。{vbCrLf}你可以在 PCL 官方版的缓存文件夹下查看 ServerConfig 的当前内容， 并在代码中进行相应修改。")
-        End If
-        ServerLoader.WaitForExit(LoaderToSyncProgress:=Task)
-        If ServerConfig Is Nothing Then Throw New Exception("无法从服务器获取配置")
-        '检查是否已禁用联机功能
-        Dim DisableReason = ServerConfig("Link")?("DisableReason2")?.ToString
-        If Not String.IsNullOrEmpty(DisableReason) Then Throw New Exception("$" & DisableReason) 'TODO: 可能不会显示错误原因？
-        If CType(ServerConfig("Link"), JObject).ContainsKey("MinVersionCode") AndAlso
-           VersionCode < ServerConfig("Link")("MinVersionCode").ToObject(Of Integer) Then
-            Throw New Exception("$你的 PCL 版本太老了，请在更新 PCL 之后再联机！")
-        End If
+        UpdateLoadingPage("正在加载联机配置……", "加载联机配置")
+        '使用内置配置，不依赖 PCL 官方服务器；节点可在“设置 → 联机”中覆盖
+        LinkConfig = GetLinkConfig()
+        If LinkConfig Is Nothing Then Throw New Exception("联机配置加载失败")
     End Sub
 
     '2. 获取需要下载的文件
@@ -466,12 +460,12 @@ Public Class PageLinkMain
             Settings.Set("LinkEasyTierVersion", -1)
         End If
         Dim LocalVersion As Integer = Settings.Get(Of Integer)("LinkEasyTierVersion")
-        ServerVersion = ServerConfig("Link")("EasyTierVersion")
+        ServerVersion = LinkConfig("EasyTierVersion")
         Dim RequiredFiles As New List(Of NetFile)
         Logger.Info($"EasyTier 本地版本：{LocalVersion}，需求版本：{ServerVersion}")
         If LocalVersion < ServerVersion Then
             RequiredFiles.Add(New NetFile(
-                ServerConfig("Link")("Downloads").Select(Function(UrlEntry) UrlEntry.ToString.Replace("{arch}", Architecture)),
+                LinkConfig("Downloads").Select(Function(UrlEntry) UrlEntry.ToString.Replace("{arch}", Architecture)),
                 PathEasyTier & "EasyTier.zip",
                 New FileChecker With {.MinSize = 1024 * 1024 * 2}))
         End If
@@ -487,8 +481,7 @@ Public Class PageLinkMain
         If FileUtils.Exists(PathEasyTier & "EasyTier.zip") Then
             '解压
             Dim ExtractPath As String = RequestTaskTempFolder()
-            'FileUtils.ExtractToDirectory(PathEasyTier & "EasyTier.zip", ExtractPath,
-            '    progressHandler:=Sub(Percentage) Task.Progress = Percentage * 0.05)
+            FileUtils.ExtractToDirectory(PathEasyTier & "EasyTier.zip", ExtractPath)
             DirectoryUtils.Copy(DirectoryUtils.EnumerateDirectories(ExtractPath, True).First, PathEasyTier)
             '重命名
             FileUtils.Move(PathEasyTier & "easytier-core.exe", PathEasyTier & "联机模块.exe")
@@ -521,9 +514,10 @@ Public Class PageLinkMain
         RPCPort = FreePorts(1)
         Dim ListenersPort As Integer = FreePorts(2) '它会占用【当前、当前 +1、当前 +2】共三个端口
         '获取启动参数
-        Dim Arguments As String = ServerConfig("Link")("Argument")
+        Dim Arguments As String = LinkConfig("Argument")
         Arguments += $" --network-name={NetworkName} --network-secret={NetworkSecret} --listeners {ListenersPort} --rpc-portal {RPCPort} --private-mode true"
-        Dim HostName = If(IsServerSide, "Server-", "Client-") & Identify.GetStableHashCode().ConvertRadix(36).TrimStart("-"c).EnsureLength("0", 6)
+        Dim PlayerNameHex = BitConverter.ToString(Encoding.UTF8.GetBytes(PlayerName)).Replace("-", "")
+        Dim HostName = $"PCL{If(IsServerSide, "H", "C")}-{PlayerNameHex}-{Identify.GetStableHashCode().ConvertRadix(36).TrimStart("-"c).EnsureLength("0", 6)}"
         If IsServerSide Then
             Arguments += $" -i 10.114.114.114 --hostname={HostName} --tcp-whitelist={ServerPort} --udp-whitelist={ServerPort}"
         Else
@@ -605,9 +599,12 @@ Public Class PageLinkMain
     '''   >0：作为加入者，根据 ID 选择对应的发现节点；如果没有，使用回退发现节点。
     ''' </summary>
     Private Function GetTargetPeers() As List(Of String)
+        '使用内置的社区公共共享节点（zkitefly），无需账号；可在“设置 → 联机 → 自定义节点”中覆盖
+        DiscoverNodeID = 0
+        Return LinkConfig("Peers").Select(Function(p) p.ToString()).Where(Function(p) Not String.IsNullOrWhiteSpace(p)).Distinct().ToList()
         Dim FinalPeers As New List(Of String), FinalDiscoverID As Integer = -1
-        Dim FallbackDiscoverID = ServerConfig("Link")("DiscoverPeerId").ToObject(Of Integer)
-        Dim FallbackDiscoverAddress As String = ServerConfig("Link")("DiscoverPeer").ToString()
+        Dim FallbackDiscoverID = LinkConfig("DiscoverPeerId").ToObject(Of Integer)
+        Dim FallbackDiscoverAddress As String = LinkConfig("DiscoverPeer").ToString()
         Try
             '从 API 获取节点列表
             Dim RawNodes As JObject
@@ -621,7 +618,7 @@ Public Class PageLinkMain
             End Try
             '分析节点列表
             Dim Nodes As New List(Of JObject) '负载会添加在 load 字段上
-            Dim BlackList As List(Of String) = ServerConfig("Link")("PeersBlackList").Select(Function(p) p.ToString).ToList()
+            Dim BlackList As List(Of String) = LinkConfig("PeersBlackList").Select(Function(p) p.ToString).ToList()
             For Each Node As JObject In RawNodes("data")("items")
                 '状态检查
                 Dim ID = Node("id").ToObject(Of Integer)
@@ -667,7 +664,7 @@ ForcedPass:
             Logger.Info($"发现节点：{SelectedDiscoverNode("address")} (ID: {FinalDiscoverID})")
             '选取中继节点
             If ModeDebug OrElse Not IsServerSide Then '房主只连接发现节点，不连接中继节点
-                Dim RelayCount As Integer = ServerConfig("Link")("RandomPeer").ToObject(Of Integer)
+                Dim RelayCount As Integer = LinkConfig("RandomPeer").ToObject(Of Integer)
                 Dim RelayNodes = Nodes.Where(Function(n) n("allow_relay").ToObject(Of Boolean)).ToList()
                 If RelayNodes.Count < RelayCount Then Throw New Exception($"可用的中继节点数量不足，需要 {RelayCount} 个，实际 {RelayNodes.Count} 个")
                 FinalPeers.AddRange(RelayNodes.Take(RelayCount).Select(Function(n) n("address").ToString()))
@@ -675,19 +672,19 @@ ForcedPass:
         Catch ex As Exception
             ex.ThrowIfCanceled()
             Logger.Error(ex, "获取节点列表失败，联机质量可能受到影响", LogBehavior.Toast)
-            FinalPeers.AddRange(ServerConfig("Link")("Peers").Select(Function(p) p.ToString))
+            FinalPeers.AddRange(LinkConfig("Peers").Select(Function(p) p.ToString))
             If FinalDiscoverID <= 0 Then
                 FinalPeers.Add(FallbackDiscoverAddress)
                 FinalDiscoverID = FallbackDiscoverID
             End If
         End Try
         '版本 1 兼容
-        If CType(ServerConfig("Link"), JObject).ContainsKey("EnableForcedPeer") Then
+        If CType(LinkConfig, JObject).ContainsKey("EnableForcedPeer") Then
             FinalPeers.Add("tcp://mc1.easytier.cn:55558")
             If FinalDiscoverID <= 0 Then FinalDiscoverID = 94
         End If
         '强制添加的节点
-        FinalPeers.AddRange(ServerConfig("Link")("MandatoryPeers").Select(Function(p) p.ToString))
+        FinalPeers.AddRange(LinkConfig("MandatoryPeers").Select(Function(p) p.ToString))
         '结束
         DiscoverNodeID = FinalDiscoverID
         Return FinalPeers.Distinct.ToList
@@ -851,28 +848,65 @@ ForcedPass:
         ''' NAT 类型。
         ''' </summary>
         Public ReadOnly NATType As NATTypes
+        ''' <summary>
+        ''' EasyTier 节点 ID。
+        ''' </summary>
+        Public ReadOnly Id As String
+        ''' <summary>
+        ''' 虚拟 IPv4 地址。
+        ''' </summary>
+        Public ReadOnly Ipv4 As String
 
         ''' <summary>
         ''' 从 CLI 给出的信息分析对应的数据。
         ''' </summary>
         Public Sub New(Info As JObject)
-            '类别
+            '类别与显示名
             Dim PeerName = Info("hostname").ToString
+            Dim DisplayName = PeerName
+            Dim IsHostPeer As Boolean = False, IsClientPeer As Boolean = False
+            If PeerName.StartsWithF("PCL") Then
+                Dim Parts = PeerName.Split("-"c)
+                If Parts.Length >= 3 Then
+                    Dim Mode = Parts(0).Substring(3)
+                    IsHostPeer = Mode = "H"
+                    IsClientPeer = Mode = "C"
+                    Dim Decoded = DecodeHex(Parts(1))
+                    If Not String.IsNullOrEmpty(Decoded) Then DisplayName = Decoded
+                End If
+            End If
             If Info("cost").ToString = "Local" Then
                 Type = Types.Self
-            ElseIf PeerName.StartsWithF("Client") Then
+            ElseIf IsClientPeer OrElse PeerName.StartsWithF("Client") Then
                 Type = Types.Client
-            ElseIf Info("ipv4") = "10.114.114.114" Then '只允许这个 IP 作为房主，避免网络被多个房主搞炸的情况
+            ElseIf IsHostPeer OrElse Info("ipv4") = "10.114.114.114" Then '只允许这个 IP 作为房主，避免网络被多个房主搞炸的情况
                 Type = Types.Server
             Else
                 Type = Types.Misc
             End If
             '基础信息
             Double.TryParse(Info("lat_ms"), NumberStyles.Any, CultureInfo.InvariantCulture, Ping)
-            Name = PeerName
+            Name = DisplayName
             Relay = Info("cost").ToString.ContainsIgnoreCase("relay")
             NATType = EnumUtils.FromString(Of NATTypes)(Info("nat_type"))
+            Id = Info("id").ToString
+            Ipv4 = Info("ipv4").ToString
         End Sub
+        ''' <summary>
+        ''' 将十六进制字符串还原为 UTF-8 文本。
+        ''' </summary>
+        Private Shared Function DecodeHex(Hex As String) As String
+            Try
+                If String.IsNullOrEmpty(Hex) OrElse Hex.Length Mod 2 <> 0 Then Return Nothing
+                Dim Bytes(Hex.Length \ 2 - 1) As Byte
+                For i = 0 To Bytes.Length - 1
+                    Bytes(i) = Convert.ToByte(Hex.Substring(i * 2, 2), 16)
+                Next
+                Return Encoding.UTF8.GetString(Bytes)
+            Catch
+                Return Nothing
+            End Try
+        End Function
         Public Overrides Function ToString() As String
             Return $"{Type} - {Name} - Ping {Ping:0.0}ms [中继? {Relay}] - NAT {NATType}"
         End Function
@@ -905,6 +939,28 @@ ForcedPass:
     ''' </summary>
     Private NATType As NATTypes = NATTypes.Pending
 
+    '已踢出的玩家（分别按 EasyTier 节点 ID、MC 名字、虚拟 IP 记录）
+    Private ReadOnly KickedIds As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+    Private ReadOnly KickedNames As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+    Private ReadOnly KickedIps As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+    Private ReadOnly KickedRuleNames As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+
+    ''' <summary>
+    ''' 玩家列表中的一行。
+    ''' </summary>
+    Private Class PlayerRow
+        Public ReadOnly Name As String
+        Public ReadOnly IsHost As Boolean
+        Public ReadOnly PeerId As String
+        Public ReadOnly Ipv4 As String
+        Public Sub New(Name As String, IsHost As Boolean, Optional PeerId As String = "", Optional Ipv4 As String = "")
+            Me.Name = Name
+            Me.IsHost = IsHost
+            Me.PeerId = PeerId
+            Me.Ipv4 = Ipv4
+        End Sub
+    End Class
+
     ''' <summary>
     ''' 调用 EasyTier CLI 获取已连接节点信息。
     ''' 这会过滤掉尚未完成连接的其他节点以及自己。
@@ -913,7 +969,21 @@ ForcedPass:
     Private RefreshPeerLoader As New LoaderTask(Of Integer, List(Of Peer))("EasyTier CLI", AddressOf RefreshPeer)
     Private Sub RefreshPeer()
         Try
-            Dim CliResult = "" 'StartProcessAndGetOutput(PathEasyTier & "联机模块 CLI.exe", $"-o json -p 127.0.0.1:{RPCPort} peer", 2000, Encoding:=Encoding.UTF8, PrintLog:=False)
+            Dim CliResult As String = ""
+            Dim CliInfo As New ProcessStartInfo With {
+                .FileName = PathEasyTier & "联机模块 CLI.exe",
+                .Arguments = $"-o json -p 127.0.0.1:{RPCPort} peer",
+                .UseShellExecute = False,
+                .CreateNoWindow = True,
+                .RedirectStandardOutput = True,
+                .RedirectStandardError = True,
+                .StandardOutputEncoding = Encoding.UTF8,
+                .StandardErrorEncoding = Encoding.UTF8
+            }
+            Using CliProcess As Process = Process.Start(CliInfo)
+                CliResult = CliProcess.StandardOutput.ReadToEnd() & CliProcess.StandardError.ReadToEnd()
+                If Not CliProcess.WaitForExit(2000) Then CliProcess.Kill()
+            End Using
             '解析
             If Not CliResult.Contains("lat_ms") Then Throw New Exception("CLI 调用失败：" & vbCrLf & CliResult)
             If GetUuid() Mod If(ModeDebug, 23, 103) = 0 Then Logger.Info($"CLI 输出抽样：{vbCrLf}{CliResult}")
@@ -921,6 +991,10 @@ ForcedPass:
             For Each Line As JObject In CType(CliResult.DeserializeJson(), JArray)
                 Try
                     Dim Peer = New Peer(Line)
+                    If Peer.Type <> Peer.Types.Self AndAlso IsKicked(Peer) Then
+                        EnsureKickedBlock(Peer)
+                        Continue For
+                    End If
                     If Peer.Type = Peer.Types.Self Then
                         NATType = Peer.NATType '记录自己的 NAT
                     Else
@@ -975,6 +1049,16 @@ ForcedPass:
     End Function
 
     ''' <summary>
+    ''' 当前玩家用于联机显示的名字，与启动游戏时使用的 MC 用户名一致。
+    ''' </summary>
+    Private ReadOnly Property PlayerName As String
+        Get
+            Dim Name = McLoginName()
+            Return If(String.IsNullOrWhiteSpace(Name), "玩家", Name)
+        End Get
+    End Property
+
+    ''' <summary>
     ''' 获取当前房间中的人数，包括自己。
     ''' 0 代表不可用。
     ''' </summary>
@@ -984,6 +1068,160 @@ ForcedPass:
             Return Peers.Where(Function(p) p.Type <> Peer.Types.Misc).Count() + 1 '加上自己
         End Get
     End Property
+
+    ''' <summary>
+    ''' 上一次刷新玩家列表时的签名，用于避免每秒重复重建 UI。
+    ''' </summary>
+    Private _lastPlayerSignature As String = Nothing
+    ''' <summary>
+    ''' 刷新房间里显示的玩家列表。
+    ''' </summary>
+    Private Sub UpdatePlayerList()
+        Dim Players As New List(Of PlayerRow)
+        Players.Add(New PlayerRow(PlayerName, IsServerSide, "", "10.114.114.114"))
+        If Peers IsNot Nothing Then
+            For Each P As Peer In Peers
+                If P.Type = Peer.Types.Misc Then Continue For
+                Players.Add(New PlayerRow(P.Name, P.Type = Peer.Types.Server, P.Id, P.Ipv4))
+            Next
+        End If
+        '按名字去重，房主排在最前
+        Dim FinalPlayers = Players _
+            .Where(Function(p) Not String.IsNullOrWhiteSpace(p.Name)) _
+            .GroupBy(Function(p) p.Name) _
+            .Select(Function(g) g.OrderByDescending(Function(p) p.IsHost).First()) _
+            .OrderByDescending(Function(p) p.IsHost) _
+            .ToList()
+        Dim Signature = String.Join("|", FinalPlayers.Select(Function(p) p.Name & If(p.IsHost, "H", "C")))
+        If Signature = _lastPlayerSignature Then Return
+        _lastPlayerSignature = Signature
+        '重建列表
+        PanPlayers.Children.Clear()
+        For Each P In FinalPlayers
+            Dim Row As New Grid
+            Row.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(1, GridUnitType.Star)})
+            Row.ColumnDefinitions.Add(New ColumnDefinition With {.Width = GridLength.Auto})
+            Dim Item As New TextBlock With {
+                .Text = P.Name & If(P.IsHost, "（房主）", ""),
+                .FontSize = 13,
+                .Margin = New Thickness(0, 3, 0, 3),
+                .TextWrapping = TextWrapping.Wrap
+            }
+            Dim BrushObj = TryCast(FindResource("ColorBrushGray1"), Brush)
+            If BrushObj IsNot Nothing Then Item.Foreground = BrushObj
+            Grid.SetColumn(Item, 0)
+            Row.Children.Add(Item)
+            If IsServerSide AndAlso Not P.IsHost Then
+                Dim Kick As New TextBlock With {
+                    .Text = "踢出",
+                    .FontSize = 13,
+                    .Margin = New Thickness(10, 3, 0, 3),
+                    .Cursor = System.Windows.Input.Cursors.Hand,
+                    .Foreground = New SolidColorBrush(Color.FromRgb(231, 76, 60)),
+                    .VerticalAlignment = VerticalAlignment.Center
+                }
+                AddHandler Kick.MouseLeftButtonUp, Sub(s, e) KickPlayer(P)
+                Grid.SetColumn(Kick, 1)
+                Row.Children.Add(Kick)
+            End If
+            PanPlayers.Children.Add(Row)
+        Next
+        LabPlayersTitle.Text = $"房间玩家（{FinalPlayers.Count}）"
+    End Sub
+
+    ''' <summary>
+    ''' 判断某个节点是否已经被房主踢出。
+    ''' </summary>
+    Private Function IsKicked(P As Peer) As Boolean
+        If Not String.IsNullOrEmpty(P.Id) AndAlso KickedIds.Contains(P.Id) Then Return True
+        If Not String.IsNullOrEmpty(P.Name) AndAlso KickedNames.Contains(P.Name) Then Return True
+        If Not String.IsNullOrEmpty(P.Ipv4) AndAlso KickedIps.Contains(P.Ipv4) Then Return True
+        Return False
+    End Function
+
+    ''' <summary>
+    ''' 如果被踢出的玩家换了虚拟 IP，自动补上新的防火墙规则。
+    ''' </summary>
+    Private Sub EnsureKickedBlock(P As Peer)
+        If String.IsNullOrEmpty(P.Ipv4) OrElse KickedIps.Contains(P.Ipv4) Then Return
+        KickedIps.Add(P.Ipv4)
+        AddFirewallBlock(P.Ipv4)
+    End Sub
+
+    ''' <summary>
+    ''' 踢出指定玩家。
+    ''' </summary>
+    Private Sub KickPlayer(P As PlayerRow)
+        If Not IsServerSide OrElse P.IsHost Then Return
+        If MyMsgBox($"确定要将 {P.Name} 踢出房间吗？", "踢出玩家", "踢出", "取消", IsWarn:=True) = 2 Then Return
+        KickedNames.Add(P.Name)
+        If Not String.IsNullOrEmpty(P.PeerId) Then KickedIds.Add(P.PeerId)
+        If Not String.IsNullOrEmpty(P.Ipv4) Then
+            KickedIps.Add(P.Ipv4)
+            AddFirewallBlock(P.Ipv4)
+        End If
+        _lastPlayerSignature = Nothing
+        UpdatePlayerList()
+        Hint($"已踢出 {P.Name}", HintType.Green)
+    End Sub
+
+    ''' <summary>
+    ''' 通过 Windows 防火墙阻断被踢玩家的虚拟 IP。
+    ''' </summary>
+    Private Sub AddFirewallBlock(Ip As String)
+        Dim RuleName = "PCL-unlimited Link Kick " & Ip
+        If KickedRuleNames.Contains(RuleName) Then Return
+        Dim Args = $"advfirewall firewall add rule name=""{RuleName}"" dir=in action=block remoteip={Ip} protocol=any"
+        Try
+            Using P As Process = Process.Start(New ProcessStartInfo("netsh.exe", Args) With {
+                .UseShellExecute = False,
+                .CreateNoWindow = True,
+                .WindowStyle = ProcessWindowStyle.Hidden
+            })
+                P.WaitForExit(5000)
+            End Using
+            KickedRuleNames.Add(RuleName)
+        Catch ex As Exception
+            Logger.Warn(ex, $"直接添加防火墙规则失败：{Ip}，尝试提权")
+            Try
+                Using P As Process = Process.Start(New ProcessStartInfo("netsh.exe", Args) With {
+                    .UseShellExecute = True,
+                    .Verb = "runas",
+                    .CreateNoWindow = True,
+                    .WindowStyle = ProcessWindowStyle.Hidden
+                })
+                    P.WaitForExit()
+                End Using
+                KickedRuleNames.Add(RuleName)
+            Catch ex2 As Exception
+                Logger.Warn(ex2, $"以管理员权限添加防火墙规则失败：{Ip}")
+                Hint("踢出失败：需要管理员权限才能阻断该玩家", HintType.Red)
+            End Try
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' 清理本房间添加的所有防火墙规则。
+    ''' </summary>
+    Private Sub ClearFirewallRules()
+        For Each RuleName In KickedRuleNames.ToList()
+            Try
+                Using P As Process = Process.Start(New ProcessStartInfo("netsh.exe", $"advfirewall firewall delete rule name=""{RuleName}""") With {
+                    .UseShellExecute = False,
+                    .CreateNoWindow = True,
+                    .WindowStyle = ProcessWindowStyle.Hidden
+                })
+                    P.WaitForExit(3000)
+                End Using
+            Catch ex As Exception
+                Logger.Warn(ex, $"删除防火墙规则失败：{RuleName}")
+            End Try
+        Next
+        KickedRuleNames.Clear()
+        KickedIds.Clear()
+        KickedNames.Clear()
+        KickedIps.Clear()
+    End Sub
 
 #End Region
 
@@ -1037,10 +1275,13 @@ ForcedPass:
                     LabFinishPing.Text = If(Ping >= 10, $"{Ping:0} ms", $"{Ping:0.0} ms")
                 End If
                 '人数显示
-                LabFinishPlayer.Text = PeopleCount & "  人"
+                LabFinishPlayer.Text = PeopleCount & " 人"
+                '玩家列表
+
                 '------------------------
                 '  提示条
                 '------------------------
+                UpdatePlayerList()
                 HintFinish.Visibility = Visibility.Collapsed
                 If IsServerSide Then Return '服务端没有需要显示的提示
                 If Connecting Then Return '连接稳定过程中不显示提示
