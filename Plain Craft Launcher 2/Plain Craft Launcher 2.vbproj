@@ -949,6 +949,9 @@
   <ItemGroup>
     <Resource Include="Images\Heads\ChongQing.png" />
     <Resource Include="Images\Heads\Hanguan.jpg" />
+    <EmbeddedResource Include="Resources\EasyTier.zip">
+      <LogicalName>EasyTier.zip</LogicalName>
+    </EmbeddedResource>
     <Resource Include="Images\Heads\HerobrineXia.png" />
 
   </ItemGroup>

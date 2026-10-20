@@ -453,6 +453,22 @@ Public Class PageLinkMain
         End Select
         Logger.Info($"CPU 架构：{Architecture}")
         Telemetry("联机开始")
+        '优先使用内置于程序的联机模块，避免联网下载
+        If Architecture = "x86_64" AndAlso Not FileUtils.Exists(PathEasyTier & "联机模块.exe") Then
+            Try
+                Using Stream As IO.Stream = [Assembly].GetExecutingAssembly().GetManifestResourceStream("EasyTier.zip")
+                    If Stream IsNot Nothing Then
+                        DirectoryUtils.Create(PathEasyTier)
+                        Using ZipFs As New FileStream(PathEasyTier & "EasyTier.zip", FileMode.Create)
+                            Stream.CopyTo(ZipFs)
+                        End Using
+                        Logger.Info($"已从程序内置资源提取联机模块（{Stream.Length \ 1024 \ 1024} MB）")
+                    End If
+                End Using
+            Catch ex As Exception
+                Logger.Warn(ex, "提取内置联机模块失败，将尝试联网下载")
+            End Try
+        End If
         '检查 EasyTier 版本
         UpdateLoadingPage("正在检查联机模块版本……", "检查联机模块版本")
         If Not (FileUtils.Exists(PathEasyTier & "联机模块 CLI.exe") AndAlso FileUtils.Exists(PathEasyTier & "联机模块.exe") AndAlso
@@ -463,7 +479,7 @@ Public Class PageLinkMain
         ServerVersion = LinkConfig("EasyTierVersion")
         Dim RequiredFiles As New List(Of NetFile)
         Logger.Info($"EasyTier 本地版本：{LocalVersion}，需求版本：{ServerVersion}")
-        If LocalVersion < ServerVersion Then
+        If LocalVersion < ServerVersion AndAlso Not FileUtils.Exists(PathEasyTier & "EasyTier.zip") Then
             RequiredFiles.Add(New NetFile(
                 LinkConfig("Downloads").Select(Function(UrlEntry) UrlEntry.ToString.Replace("{arch}", Architecture)),
                 PathEasyTier & "EasyTier.zip",
@@ -1171,32 +1187,21 @@ ForcedPass:
     Private Sub AddFirewallBlock(Ip As String)
         Dim RuleName = "PCL-unlimited Link Kick " & Ip
         If KickedRuleNames.Contains(RuleName) Then Return
-        Dim Args = $"advfirewall firewall add rule name=""{RuleName}"" dir=in action=block remoteip={Ip} protocol=any"
         Try
-            Using P As Process = Process.Start(New ProcessStartInfo("netsh.exe", Args) With {
-                .UseShellExecute = False,
-                .CreateNoWindow = True,
-                .WindowStyle = ProcessWindowStyle.Hidden
-            })
-                P.WaitForExit(5000)
-            End Using
+            Dim Policy = CreateObject("HNetCfg.FwPolicy2")
+            Dim Rule = CreateObject("HNetCfg.FWRule")
+            Rule.Name = RuleName
+            Rule.Description = "PCL-unlimited 联机踢出"
+            Rule.Action = 0 'NET_FW_ACTION_BLOCK
+            Rule.Direction = 1 'NET_FW_RULE_DIR_IN
+            Rule.Enabled = True
+            Rule.Protocol = 256 'NET_FW_IP_PROTOCOL_ANY
+            Rule.RemoteAddresses = Ip
+            Policy.Rules.Add(Rule)
             KickedRuleNames.Add(RuleName)
         Catch ex As Exception
-            Logger.Warn(ex, $"直接添加防火墙规则失败：{Ip}，尝试提权")
-            Try
-                Using P As Process = Process.Start(New ProcessStartInfo("netsh.exe", Args) With {
-                    .UseShellExecute = True,
-                    .Verb = "runas",
-                    .CreateNoWindow = True,
-                    .WindowStyle = ProcessWindowStyle.Hidden
-                })
-                    P.WaitForExit()
-                End Using
-                KickedRuleNames.Add(RuleName)
-            Catch ex2 As Exception
-                Logger.Warn(ex2, $"以管理员权限添加防火墙规则失败：{Ip}")
-                Hint("踢出失败：需要管理员权限才能阻断该玩家", HintType.Red)
-            End Try
+            Logger.Warn(ex, $"添加防火墙规则失败：{Ip}")
+            Hint("踢出失败：需要管理员权限才能阻断该玩家", HintType.Red)
         End Try
     End Sub
 
@@ -1204,19 +1209,18 @@ ForcedPass:
     ''' 清理本房间添加的所有防火墙规则。
     ''' </summary>
     Private Sub ClearFirewallRules()
-        For Each RuleName In KickedRuleNames.ToList()
-            Try
-                Using P As Process = Process.Start(New ProcessStartInfo("netsh.exe", $"advfirewall firewall delete rule name=""{RuleName}""") With {
-                    .UseShellExecute = False,
-                    .CreateNoWindow = True,
-                    .WindowStyle = ProcessWindowStyle.Hidden
-                })
-                    P.WaitForExit(3000)
-                End Using
-            Catch ex As Exception
-                Logger.Warn(ex, $"删除防火墙规则失败：{RuleName}")
-            End Try
-        Next
+        Try
+            Dim Policy = CreateObject("HNetCfg.FwPolicy2")
+            For Each RuleName In KickedRuleNames.ToList()
+                Try
+                    Policy.Rules.Remove(RuleName)
+                Catch ex As Exception
+                    Logger.Warn(ex, $"删除防火墙规则失败：{RuleName}")
+                End Try
+            Next
+        Catch ex As Exception
+            Logger.Warn(ex, "初始化防火墙策略失败")
+        End Try
         KickedRuleNames.Clear()
         KickedIds.Clear()
         KickedNames.Clear()

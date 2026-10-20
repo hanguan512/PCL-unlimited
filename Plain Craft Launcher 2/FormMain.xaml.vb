@@ -447,9 +447,15 @@ Public Class FormMain
             End Try
             '上报
             Telemetry("启动")
-            '开源版本提示
+            '修改版免责声明
             If VersionBranchMain = "OpenSource" Then
-                MyMsgBox($"该版本中无法使用以下特性：{vbCrLf}- CurseForge API 调用：需要自行申请 API Key，然后添加到 ModSecret.vb 的开头{vbCrLf}- 正版登录：需要自行向微软申请 Client ID，然后添加到 ModSecret.vb 的开头{vbCrLf}- 更新与联网通知：避免滥用隐患{vbCrLf}- 主题切换：这是需要赞助解锁的纪念性质的功能，别让赞助者太伤心啦……{vbCrLf}- 百宝箱：开发早期往里面塞了些开发工具，整理起来太麻烦了……", "开源版本说明")
+                MyMsgBox(
+                    "本软件（PCL-unlimited）是第三方基于 Plain Craft Launcher (PCL) 修改的版本，并非 PCL 官方发布，与 PCL 官方团队无关。" & vbCrLf &
+                    "- 本软件按" & vbLQ & "现状" & vbRQ & "提供，仅供学习交流使用，使用产生的一切后果由使用者自行承担。" & vbCrLf &
+                    "- 请遵守 Minecraft 最终用户许可协议（EULA）与所在地区法律法规，支持正版 Minecraft。" & vbCrLf &
+                    "- 联机与下载功能依赖开源组件与社区节点，其可用性不受本软件控制。" & vbCrLf &
+                    "- 原项目与许可信息见" & vbLQ & "更多 - 关于" & vbRQ & "页面。",
+                    "免责声明")
             End If
         End Sub, "初始化", ThreadPriority.Lowest)
 

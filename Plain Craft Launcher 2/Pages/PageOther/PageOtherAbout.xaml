@@ -67,6 +67,7 @@
                     </TextBlock>
                     <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0" Text="修改维护者：瀚观（GitHub @hanguan512）" />
                     <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,2,0,0" Text="本修改版仓库：https://github.com/hanguan512/PCL-unlimited" />
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,2,0,0" Text="反馈与交流：QQ 群 839898455" />
                     <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                         <local:MyButton Text="打开修改版仓库" MinWidth="150" Height="32" Margin="0,0,15,0" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/hanguan512/PCL-unlimited" />
                         <local:MyButton Text="打开原项目主页" MinWidth="150" Height="32" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/Meloong-Git/PCL" />
