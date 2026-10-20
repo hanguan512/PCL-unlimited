@@ -20,7 +20,7 @@
                     </Grid.ColumnDefinitions>
                     <local:MyListItem IsHitTestVisible="False" Title="龙腾猫跃" Margin="-5,0,15,0" Info="Plain Craft Launcher 的开发者！" Grid.Row="0" Grid.Column="1" />
                     <local:MyListItem IsHitTestVisible="False" Title="HerobrineXia" Margin="-5,0,15,0" Info="Plain Craft Launcher 的协力开发者！" Grid.Row="1" Grid.Column="1" />
-                    <local:MyListItem IsHitTestVisible="False" Title="Plain Craft Launcher 2" Margin="-5,0,15,0" Info="当前版本：%VERSION%（%VERSIONCODE%.%BRANCH%）" Grid.Row="2" Grid.Column="1" x:Name="ItemAboutPcl" />
+                    <local:MyListItem IsHitTestVisible="False" Title="PCL-unlimited（第三方修改版）" Margin="-5,0,15,0" Info="第三方基于 PCL 的独立修改版 · 当前版本：%VERSION%（%VERSIONCODE%.%BRANCH%）" Grid.Row="2" Grid.Column="1" x:Name="ItemAboutPcl" />
                     <Image Source="/Plain Craft Launcher 2;component/Images/Heads/LTCat.jpg" Grid.Row="0" Margin="3">
                         <Image.Clip>
                             <EllipseGeometry Center="17 17" RadiusX="17" RadiusY="17" />
@@ -41,6 +41,20 @@
                     <local:MyButton Text="检查更新" Grid.Column="2" Grid.Row="2" Height="35" 
                                     x:Name="BtnAboutUpdate" />
                 </Grid>
+            </local:MyCard>
+            <local:MyCard Margin="0,0,0,15" Title="第三方修改说明">
+                <StackPanel Margin="25,40,19,20">
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22">
+                        本软件（PCL-unlimited）是<Run FontWeight="Bold">第三方基于 Plain Craft Launcher (PCL) 独立修改</Run>的产物，并非 PCL 官方发布，也与 PCL 官方团队无关。
+                    </TextBlock>
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0">
+                        主要修改：移除 Minecraft 下载功能，调整版本标识与界面文案。若需原版 PCL，请前往官方项目页下载。
+                    </TextBlock>
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0">
+                        原项目：https://github.com/Meloong-Git/PCL
+                    </TextBlock>
+                    <local:MyButton Text="打开原项目主页" HorizontalAlignment="Left" Margin="0,12,0,0" Height="32" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/Meloong-Git/PCL" />
+                </StackPanel>
             </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="特别鸣谢">
                 <Grid Margin="21,40,21,16">

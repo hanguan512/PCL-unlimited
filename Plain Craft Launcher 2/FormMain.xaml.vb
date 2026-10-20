@@ -746,6 +746,7 @@ Public Class FormMain
             Case 0 '无
                 ShapeTitleLogo.Visibility = Visibility.Collapsed
                 LabTitleLogo.Visibility = Visibility.Collapsed
+                LabTitleBrand.Visibility = Visibility.Collapsed
                 ImageTitleLogo.Visibility = Visibility.Collapsed
                 If Not IsNothing(FrmSetupUI) Then 'TODO: 和 FrmSetupUI 解耦
                     FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Visible
@@ -755,6 +756,7 @@ Public Class FormMain
             Case 1 '默认
                 ShapeTitleLogo.Visibility = Visibility.Visible
                 LabTitleLogo.Visibility = Visibility.Collapsed
+                LabTitleBrand.Visibility = Visibility.Visible
                 ImageTitleLogo.Visibility = Visibility.Collapsed
                 If Not IsNothing(FrmSetupUI) Then
                     FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
@@ -764,6 +766,7 @@ Public Class FormMain
             Case 2 '文本
                 ShapeTitleLogo.Visibility = Visibility.Collapsed
                 LabTitleLogo.Visibility = Visibility.Visible
+                LabTitleBrand.Visibility = Visibility.Collapsed
                 ImageTitleLogo.Visibility = Visibility.Collapsed
                 If Not IsNothing(FrmSetupUI) Then
                     FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
@@ -773,6 +776,7 @@ Public Class FormMain
             Case 3 '图片
                 ShapeTitleLogo.Visibility = Visibility.Collapsed
                 LabTitleLogo.Visibility = Visibility.Collapsed
+                LabTitleBrand.Visibility = Visibility.Collapsed
                 ImageTitleLogo.Visibility = Visibility.Visible
                 If Not IsNothing(FrmSetupUI) Then
                     FrmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed
