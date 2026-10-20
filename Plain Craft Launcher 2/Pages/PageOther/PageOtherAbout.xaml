@@ -12,6 +12,7 @@
                         <RowDefinition Height="45" />
                         <RowDefinition Height="45" />
                         <RowDefinition Height="45" />
+                        <RowDefinition Height="45" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="40" />
@@ -21,6 +22,7 @@
                     <local:MyListItem IsHitTestVisible="False" Title="龙腾猫跃" Margin="-5,0,15,0" Info="Plain Craft Launcher 的开发者！" Grid.Row="0" Grid.Column="1" />
                     <local:MyListItem IsHitTestVisible="False" Title="HerobrineXia" Margin="-5,0,15,0" Info="Plain Craft Launcher 的协力开发者！" Grid.Row="1" Grid.Column="1" />
                     <local:MyListItem IsHitTestVisible="False" Title="PCL-unlimited（第三方修改版）" Margin="-5,0,15,0" Info="第三方基于 PCL 的独立修改版 · 当前版本：%VERSION%（%VERSIONCODE%.%BRANCH%）" Grid.Row="2" Grid.Column="1" x:Name="ItemAboutPcl" />
+                    <local:MyListItem IsHitTestVisible="False" Title="瀚观" Margin="-5,0,15,0" Info="PCL-unlimited 修改维护者！" Grid.Row="3" Grid.Column="1" />
                     <Image Source="/Plain Craft Launcher 2;component/Images/Heads/LTCat.jpg" Grid.Row="0" Margin="3">
                         <Image.Clip>
                             <EllipseGeometry Center="17 17" RadiusX="17" RadiusY="17" />
@@ -36,10 +38,17 @@
                             <EllipseGeometry Center="17 17" RadiusX="17" RadiusY="17" />
                         </Image.Clip>
                     </Image>
+                    <Image Source="/Plain Craft Launcher 2;component/Images/Heads/Hanguan.jpg" Grid.Row="3" Margin="3">
+                        <Image.Clip>
+                            <EllipseGeometry Center="17 17" RadiusX="17" RadiusY="17" />
+                        </Image.Clip>
+                    </Image>
                     <local:MyButton Text="赞助 PCL !" Grid.Column="2" Grid.Row="0" Height="35" ColorType="Highlight"
                                     local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://meloong.com/afd/a/LTCat" />
-                    <local:MyButton Text="检查更新" Grid.Column="2" Grid.Row="2" Height="35" 
+                    <local:MyButton Text="检查更新" Grid.Column="2" Grid.Row="2" Height="35"
                                     x:Name="BtnAboutUpdate" />
+                    <local:MyButton Text="修改版仓库" Grid.Column="2" Grid.Row="3" Height="35"
+                                    local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/hanguan512/PCL-unlimited" />
                 </Grid>
             </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="第三方修改说明">
@@ -56,7 +65,12 @@
                     <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0">
                         原项目：https://github.com/Meloong-Git/PCL
                     </TextBlock>
-                    <local:MyButton Text="打开原项目主页" HorizontalAlignment="Left" Margin="0,12,0,0" Height="32" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/Meloong-Git/PCL" />
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,8,0,0" Text="修改维护者：瀚观（GitHub @hanguan512）" />
+                    <TextBlock TextWrapping="WrapWithOverflow" LineHeight="22" Margin="0,2,0,0" Text="本修改版仓库：https://github.com/hanguan512/PCL-unlimited" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <local:MyButton Text="打开修改版仓库" MinWidth="150" Height="32" Margin="0,0,15,0" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/hanguan512/PCL-unlimited" />
+                        <local:MyButton Text="打开原项目主页" MinWidth="150" Height="32" local:CustomEventService.EventType="打开网页" local:CustomEventService.EventData="https://github.com/Meloong-Git/PCL" />
+                    </StackPanel>
                 </StackPanel>
             </local:MyCard>
             <local:MyCard Margin="0,0,0,15" Title="特别鸣谢">
