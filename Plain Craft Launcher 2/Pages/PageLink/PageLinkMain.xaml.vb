@@ -616,7 +616,8 @@ Public Class PageLinkMain
     ''' </summary>
     Private Function GetTargetPeers() As List(Of String)
         '使用内置的社区公共共享节点（zkitefly），无需账号；可在“设置 → 联机 → 自定义节点”中覆盖
-        DiscoverNodeID = 0
+        '注意：不能为 0。邀请码末三位为 000 时，加入方会认为房主使用了“自定义节点”，从而拒绝加入
+        DiscoverNodeID = 1
         Return LinkConfig("Peers").Select(Function(p) p.ToString()).Where(Function(p) Not String.IsNullOrWhiteSpace(p)).Distinct().ToList()
         Dim FinalPeers As New List(Of String), FinalDiscoverID As Integer = -1
         Dim FallbackDiscoverID = LinkConfig("DiscoverPeerId").ToObject(Of Integer)
